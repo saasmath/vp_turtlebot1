@@ -1,0 +1,21 @@
+<launch>
+  <node name="" pkg="roswww" type="webserver.py" >
+  </node>
+  <node name="mjpeg_server" pkg="mjpeg_server" type="mjpeg_server" >
+  </node>
+  <node name="serial_node" pkg="rosserial_python" type="serial_node.py" >
+    <param name="port" value="/dev/ttyACM0"></param>
+  </node>
+  <node name="usb_cam1" pkg="usb_cam" type="usb_cam_node" output="screen" >
+    <param name="video_device" value="/dev/video1"></param>
+    <param name="image_width" value="320"></param>
+    <param name="image_height" value="240"></param>
+    <param name="pixel_format" value="yuyv"></param>
+    <param name="camera_frame_id" value="usb_cam"></param>
+    <param name="io_method" value="mmap"></param>
+  </node>
+  <node name="image_view" pkg="image_view" type="image_view" respawn="false" output="screen">
+    <remap from="image" to="/usb_cam1/image_raw"/>
+    <param name="autosize" value="true"></param>
+  </node>
+</launch>

@@ -1,0 +1,55 @@
+<html>
+<head>
+<script src='ros.js'></script>
+<script src='gamepad.js'></script>
+<script type="text/javascript">
+
+var Item = function() {
+        this.button1 = 0.0;
+        this.button2 = 0.0;
+        this.button3 = 0.0;
+        this.button4 = 0.0;
+        this.button5 = 0.0;
+        this.button6 = 0.0;
+        this.button7 = 0.0;
+        this.button8 = 0.0;
+        this.button9 = 0.0;
+        this.button10 = 0.0;
+        this.button11 = 0.0;
+        this.button12 = 0.0;
+        this.button13 = 0.0;
+        this.button14 = 0.0;
+        this.button15 = 0.0;
+        this.button16 = 0.0;
+        this.axes1 = 0.0;
+        this.axes2 = 0.0;
+        this.axes3 = 0.0;
+        this.axes4 = 0.0;
+    };
+
+var choice_robot="192.168.1.103";
+var con = new Bridge("ws://192.168.1.103:9090");
+
+var get_data2=function(msg)
+  {
+   var voltage=parseInt(msg/65535*100);
+    document.getElementById("battery").innerHTML=voltage+" %";
+    if(voltage>70)
+      document.getElementById("battery").style.backgroundColor='green';
+    else if(voltage>30)
+      document.getElementById("battery").style.backgroundColor='yellow';
+    else
+      document.getElementById("battery").style.backgroundColor='red';
+  }
+con.onOpen=function()
+  {
+  var cback2=function(msg2) {JSON.stringify(msg2),get_data2(msg2.voltage);}
+    con.subscribe(cback2,'/turtlebot_node/sensor_state','turtlebot_node/TurtlebotSensorState');
+    con.advertise('/turtlebot_servo', 'std_msgs/Int16');	
+  }
+
+function main() { 
+   document.getElementById('button1').addEventListener('click', function(e) {send_ros1(); }, true);
+   document.getElementById('button2').addEventListener('click', function(e) {send_ros2(); }, true);
+   }
+    //  

@@ -1,0 +1,179 @@
+<html>
+<head>
+<script src='ros.js'></script>
+<script type="text/javascript">
+//var choice_robot="192.168.0.8";
+//var con = new Bridge("ws://192.168.0.8:9090");
+var choice_robot="192.168.1.103";
+var con = new Bridge("ws://192.168.1.103:9090");
+
+var get_data2=function(msg)
+  {
+   //document.getElementById("battery").innerHTML=parseInt(msg/65535*100)+" %";
+   document.getElementById("battery").innerHTML=msg/65535*100+" %";
+   var voltage=parseInt(msg/65535*100);
+    if(voltage>70)
+      document.getElementById("battery").style.backgroundColor='green';
+    else if(voltage>30)
+      document.getElementById("battery").style.backgroundColor='yellow';
+    else
+      document.getElementById("battery").style.backgroundColor='red';
+  }
+con.onOpen=function()
+  {
+  var cback2=function(msg2) {JSON.stringify(msg2),get_data2(msg2.voltage);}
+    con.subscribe(cback2,'/turtlebot_node/sensor_state','turtlebot_node/TurtlebotSensorState');
+    con.advertise('/turtlebot_servo', 'std_msgs/Int16');	
+    con.advertise('/cmd_vel', 'geometry_msgs/Twist');	
+  }
+
+function main() { 
+   document.getElementById('button2').addEventListener('click', function(e) {send_ros2(); }, true);
+   }
+    // голос
+    var cam_poz1=90;  // вверх-вниз
+    var cam_poz2=90;  // влево-вправо
+    var go_poz=new Array(0,0,0,0,0,0);  // движение робота для cmd_vel
+
+    var fraza=new Object();
+    fraza={
+          cam_up1:"камера вверх",
+          cam_bottom1:"камера вниз",
+          cam_left1:"камера влево",
+          cam_left2:"камера лего",
+          cam_left3:"камера в лего",
+          cam_right1:"камера вправо",
+          cam_right2:"камера права",
+          cam_right3:"камера право",
+          robot_forward1:"роберт вперед",
+          robot_forward2:"роберт перед",
+          robot_back1:"роберт назад",
+          robot_left1:"роберт влево",
+          robot_right1:"роберт вправо",
+          robot_right2:"роберт право",
+          robot_right3:"роберт права",
+          robot_stop1:"роберт стоять"
+          };
+       function get_speech_res(evt) {
+           var str1=document.getElementById("res_speech").value;
+           alert(str1);
+           for(var k in fraza)
+             {
+             if(str1.search(fraza[k])!=-1)
+                  {//alert(fraza[k]);
+                   document.getElementById("speech1").value=k;
+                   var kk=""+str1.replace(fraza[k],"");
+                   if(kk.length<1) 
+                      kk="10";
+                   document.getElementById("speech2").value=kk;
+                   document.getElementById('button2').click();         
+                   break;}
+             else ;
+             }
+    }
+
+
+
+
+    // send голос
+    function send_ros2() {
+        var action1=document.getElementById("speech1").value;
+        var value1=parseInt(document.getElementById("speech2").value);
+        //**** движение камеры 
+        //**** джойстик1 - вверх-вниз
+        //**** джойстик2 - влево-вправо
+        if(action1.search("cam_up")!=-1)
+          {cam_poz1=Math.min(cam_poz1+value1,180);
+          document.getElementById("cam_poz1").value=cam_poz1.toString();
+          con.publish('/turtlebot_servo', {'data':parseInt(cam_poz1+256*cam_poz2)});
+          }
+        else if(action1.search("cam_down")!=-1)
+          {cam_poz1=Math.max(cam_poz1-value1,0);
+          document.getElementById("cam_poz1").value=cam_poz1.toString();
+          con.publish('/turtlebot_servo', {'data':parseInt(cam_poz1+256*cam_poz2)});
+          }
+        else if(action1.search("cam_left")!=-1)
+          {cam_poz2=Math.max(cam_poz2-value1,0);
+          document.getElementById("cam_poz2").value=cam_poz2.toString();
+          con.publish('/turtlebot_servo', {'data':parseInt(cam_poz1+256*cam_poz2)});
+          }
+        else if(action1.search("cam_right")!=-1)
+          {cam_poz2=Math.min(cam_poz2+value1,180);
+          document.getElementById("cam_poz2").value=cam_poz2.toString();
+          con.publish('/turtlebot_servo', {'data':parseInt(cam_poz1+256*cam_poz2)});
+          }
+        //************* движение turtlebot
+        else if(action1.search("robot_forward")!=-1)
+          {go_poz[0]=1;go_poz[5]=0;alert("forward");
+          con.publish('/cmd_vel', {"linear":{ "x": go_poz[0],"y": 0.0,"z": 0.0},"angular":{"x": 0.0,"y": 0.0,"z": go_poz[5]}});
+          }
+        else if(action1.search("robot_back")!=-1)
+          {go_poz[0]=-1;go_poz[5]=0;
+          con.publish('/cmd_vel', {"linear":{"x":go_poz[0],"y":0,"z":0},"angular":{"x":0,"y":0,"z":go_poz[5]}});
+          }
+        else if(action1.search("robot_left")!=-1)
+          {go_poz[5]=-1;
+          con.publish('/cmd_vel', {"linear":{"x":go_poz[0],"y":0,"z":0},"angular":{"x":0,"y":0,"z":go_poz[5]}});
+          }
+        else if(action1.search("robot_right")!=-1)
+          {go_poz[5]=1;
+          con.publish('/cmd_vel', {"linear":{"x":go_poz[0],"y":0,"z":0},"angular":{"x":0,"y":0,"z":go_poz[5]}});
+          }
+        else if(action1.search("robot_stop")!=-1)
+          {go_poz[0]=0;go_poz[5]=0;
+          con.publish('/cmd_vel', {"linear":{"x":go_poz[0],"y":0,"z":0},"angular":{"x":0,"y":0,"z":go_poz[5]}});
+          }
+        else ;
+    }
+
+function new_robot(address)
+  {
+  alert(address);
+  choice_robot=address;
+  con = new Bridge("ws://"+address+":9090");
+  }
+
+function new_camera(topic)
+  {
+  document.getElementById("camera_robot").src="http://"+choice_robot+":8080/stream?topic="+topic;
+  }
+</script>
+
+</head>
+<body>
+<h2 id="start">Удаленное управление Turtlebot - голос</h2>
+<h3 id="">Настройки</h3>
+    <form id=formoptions name=formoptions action="javascript:void();" onsubmit="feturn false;">
+      Робот
+      <select name=choice_robot id=choice_robot onchange='choice_robot=this.value;new_robot(this.value)'>
+        <option value="192.168.1.103"> 192.168.1.103:9090 
+      </select>
+      <br>Камера
+      <select name=choice_camera id=choice_camera onchange='new_camera(this.value)'>
+        <option value="/usb_cam1/image_raw" selected> /usb_cam1/image_raw
+        <option value="/camera/depth/image_raw" selected> /camera/depth/image_raw
+         <option value="/camera/rgb/image_mono"> /camera/rgb/image_mono
+        <option value="/camera/rgb/image_color"> /camera/rgb/image_color
+      </select>
+      <br>Служебные поля
+      <input name=res id=res>
+      <input name=speech1 id=speech1>
+      <input name=speech2 id=speech2>
+      <input name=cam_poz1 id=cam_poz1 value=90 size=5>
+      <input name=cam_poz2 id=cam_poz2 value=90 size=5>
+      <br> battery
+           <span id="battery"> - </span>
+      <br>
+      <input id=res_speech type=text x-webkit-speech onwebkitspeechchange='get_speech_res(event);'>
+    </form>
+    <button id='button2' value='send' style='visibility:hidden'></button>
+
+
+<script type="text/javascript">
+main();
+</script>
+
+<img id=camera_robot src="http://192.168.1.103:8080/stream?topic=/camera/rgb/image_color" width=320px>
+
+</body>
+</html>
